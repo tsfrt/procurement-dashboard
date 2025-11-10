@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "databricks:validate": "databricks bundle validate -t dev",
+    "databricks:deploy:dev": "databricks bundle deploy -t dev",
+    "databricks:deploy:prod": "databricks bundle deploy -t prod",
+    "databricks:run": "databricks bundle run procurement_analysis_adhoc -t dev",
+    "databricks:setup": "bash scripts/setup.sh"
   },
   "dependencies": {
     "react": "19.2.0",

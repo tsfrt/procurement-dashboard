@@ -1,0 +1,120 @@
+resources:
+  jobs:
+    procurement_analysis_pipeline:
+      name: "Procurement Analysis Pipeline"
+      description: "Analyzes procurement contracts for duplicate spending, compliance, and pricing"
+      
+      # Job cluster configuration
+      job_clusters:
+        - job_cluster_key: procurement_cluster
+          new_cluster:
+            spark_version: "13.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 2
+            spark_conf:
+              spark.databricks.delta.preview.enabled: "true"
+            custom_tags:
+              project: procurement-analytics
+              environment: ${bundle.target}
+      
+      # Email notifications
+      email_notifications:
+        on_failure:
+          - ${NOTIFICATION_EMAIL}
+      
+      # Task configuration
+      tasks:
+        - task_key: analyze_contracts
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/contract_analysis
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 3600
+          
+        - task_key: detect_duplicates
+          depends_on:
+            - task_key: analyze_contracts
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/duplicate_detection
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 3600
+          
+        - task_key: compliance_check
+          depends_on:
+            - task_key: analyze_contracts
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/compliance_analysis
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 3600
+          
+        - task_key: pricing_benchmark
+          depends_on:
+            - task_key: analyze_contracts
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/pricing_analysis
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 3600
+          
+        - task_key: generate_report
+          depends_on:
+            - task_key: detect_duplicates
+            - task_key: compliance_check
+            - task_key: pricing_benchmark
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/report_generation
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 1800
+      
+      # Schedule (daily at 2 AM UTC)
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: "UTC"
+        pause_status: "UNPAUSED"
+      
+      # Maximum concurrent runs
+      max_concurrent_runs: 1
+      
+      # Timeout
+      timeout_seconds: 10800
+      
+    procurement_analysis_adhoc:
+      name: "Procurement Analysis - Ad Hoc"
+      description: "On-demand contract analysis job"
+      
+      job_clusters:
+        - job_cluster_key: procurement_cluster
+          new_cluster:
+            spark_version: "13.3.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+            custom_tags:
+              project: procurement-analytics
+              environment: ${bundle.target}
+      
+      tasks:
+        - task_key: run_analysis
+          job_cluster_key: procurement_cluster
+          notebook_task:
+            notebook_path: ../src/notebooks/contract_analysis
+            base_parameters:
+              catalog: ${var.catalog_name}
+              schema: ${var.schema_name}
+          timeout_seconds: 3600
+      
+      # This job is manually triggered
+      max_concurrent_runs: 3
+

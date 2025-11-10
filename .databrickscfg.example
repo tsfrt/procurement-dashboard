@@ -1,0 +1,16 @@
+# Example Databricks CLI configuration
+# Copy this file to ~/.databrickscfg and fill in your values
+
+[DEFAULT]
+host = https://your-workspace.cloud.databricks.com
+token = dapi1234567890abcdef
+
+# You can have multiple profiles
+[dev]
+host = https://your-dev-workspace.cloud.databricks.com
+token = dapi_dev_token
+
+[prod]
+host = https://your-prod-workspace.cloud.databricks.com
+token = dapi_prod_token
+

@@ -1,0 +1,46 @@
+# Databricks Asset Bundle Configuration
+bundle:
+  name: procurement-analytics
+
+# Include workspace configuration files
+include:
+  - resources/*.yml
+
+# Target environments
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: ${DATABRICKS_HOST}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    
+  prod:
+    mode: production
+    workspace:
+      host: ${DATABRICKS_HOST}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      # Service principal or user for production
+      user_name: ${DATABRICKS_SERVICE_PRINCIPAL_NAME}
+
+# Variables for parameterization
+variables:
+  catalog_name:
+    description: Unity Catalog name
+    default: main
+  
+  schema_name:
+    description: Schema name for procurement data
+    default: procurement_analytics
+  
+  warehouse_id:
+    description: SQL Warehouse ID for queries
+    lookup:
+      # This will use the first available warehouse
+      warehouse: "shared"
+
+# Workspace configuration
+workspace:
+  file_path: /Workspace/Users/${workspace.current_user.userName}/procurement-analytics
+
